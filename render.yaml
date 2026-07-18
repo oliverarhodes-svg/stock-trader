@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: stock-tracker
+    runtime: ruby
+    plan: free
+    buildCommand: echo "No build step"
+    startCommand: ruby server.rb
+    envVars:
+      - key: RUBY_VERSION
+        value: 3.3.0
