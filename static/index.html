@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Portfolio Tracker</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Stock Portfolio Tracker</h1>
+      <p class="subtitle">Track your portfolio and research any stock or ETF.</p>
+    </header>
+
+    <nav class="tabs">
+      <button type="button" class="tab active" data-tab="portfolio">Portfolio</button>
+      <button type="button" class="tab" data-tab="research">Research</button>
+    </nav>
+
+    <div id="portfolio-panel" class="tab-panel">
+      <section class="card">
+        <div class="card-header">
+          <h2>Your Positions</h2>
+          <button type="button" id="add-row" class="btn btn-secondary">+ Add position</button>
+        </div>
+
+        <form id="portfolio-form">
+          <div class="table-wrap">
+            <table class="input-table">
+              <thead>
+                <tr>
+                  <th>Ticker</th>
+                  <th>Shares</th>
+                  <th>Purchase price</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="positions-body">
+                <tr class="position-row">
+                  <td><input type="text" name="ticker" placeholder="AAPL" required maxlength="10"></td>
+                  <td><input type="number" name="shares" placeholder="10" min="0.0001" step="any" required></td>
+                  <td><input type="number" name="purchase_price" placeholder="150.00" min="0.01" step="0.01" required></td>
+                  <td><button type="button" class="btn btn-ghost remove-row" title="Remove">×</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="actions">
+            <button type="submit" id="analyze-btn" class="btn btn-primary">Analyze portfolio</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="results-section" class="card hidden">
+        <div class="card-header">
+          <h2>Results</h2>
+          <span id="updated-at" class="muted"></span>
+        </div>
+
+        <div class="table-wrap">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Shares</th>
+                <th>Purchase</th>
+                <th>Cost basis</th>
+                <th>Current</th>
+                <th>Value</th>
+                <th>P/L ($)</th>
+                <th>P/L (%)</th>
+              </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+            <tfoot id="results-foot"></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <div id="error-banner" class="error-banner hidden"></div>
+    </div>
+
+    <div id="research-panel" class="tab-panel hidden">
+      <section class="card">
+        <div class="card-header">
+          <h2>Search ticker</h2>
+        </div>
+
+        <form id="research-form" class="search-form">
+          <div class="search-row">
+            <input type="text" id="research-query" placeholder="Search AAPL, SPY, TSLA..." autocomplete="off" maxlength="20">
+            <button type="submit" id="research-btn" class="btn btn-primary">Research</button>
+          </div>
+          <div id="search-suggestions" class="search-suggestions hidden"></div>
+        </form>
+      </section>
+
+      <div id="research-loading" class="card hidden">
+        <p class="muted loading-text">Loading research data…</p>
+      </div>
+
+      <div id="research-error" class="error-banner hidden"></div>
+
+      <div id="research-results" class="hidden">
+        <section class="card">
+          <div class="research-header">
+            <div>
+              <div class="ticker-line">
+                <h2 id="research-ticker"></h2>
+                <span id="research-type" class="badge"></span>
+              </div>
+              <p id="research-name" class="research-name"></p>
+              <p id="research-meta" class="muted"></p>
+            </div>
+            <div class="price-block">
+              <div id="research-price" class="research-price"></div>
+              <div id="research-change"></div>
+            </div>
+          </div>
+          <p id="research-description" class="research-description"></p>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <h2>Price chart</h2>
+            <div id="chart-ranges" class="range-buttons"></div>
+          </div>
+          <div class="chart-wrap">
+            <p id="chart-unavailable" class="chart-unavailable hidden"></p>
+            <canvas id="price-chart"></canvas>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-header"><h2>Key metrics</h2></div>
+          <div id="key-stats-grid" class="stats-grid"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-header"><h2>Financials</h2></div>
+          <div id="financials-grid" class="stats-grid"></div>
+        </section>
+
+        <section class="card" id="analyst-section">
+          <div class="card-header"><h2>Analyst consensus</h2></div>
+          <div id="analyst-summary" class="analyst-summary"></div>
+          <div id="analyst-bars" class="analyst-bars"></div>
+          <div class="table-wrap">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Firm</th>
+                  <th>Action</th>
+                  <th>Rating</th>
+                  <th>Price target</th>
+                </tr>
+              </thead>
+              <tbody id="analyst-actions"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card" id="earnings-section">
+          <div class="card-header"><h2>Earnings & revenue</h2></div>
+          <h3 class="section-label">Quarterly EPS (actual vs estimate)</h3>
+          <div class="table-wrap">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>Period</th>
+                  <th>Actual</th>
+                  <th>Estimate</th>
+                  <th>Surprise</th>
+                </tr>
+              </thead>
+              <tbody id="earnings-quarterly"></tbody>
+            </table>
+          </div>
+
+          <h3 class="section-label">Yearly revenue & earnings</h3>
+          <div class="table-wrap">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>Year</th>
+                  <th>Revenue</th>
+                  <th>Earnings</th>
+                </tr>
+              </thead>
+              <tbody id="earnings-yearly"></tbody>
+            </table>
+          </div>
+
+          <h3 class="section-label">Forward estimates</h3>
+          <div class="table-wrap">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>Period</th>
+                  <th>Avg estimate</th>
+                  <th>Low</th>
+                  <th>High</th>
+                  <th>Growth</th>
+                  <th>Analysts</th>
+                </tr>
+              </thead>
+              <tbody id="earnings-estimates"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card hidden" id="etf-section">
+          <div class="card-header"><h2>ETF breakdown</h2></div>
+          <p id="etf-meta" class="muted"></p>
+
+          <h3 class="section-label">Top holdings</h3>
+          <div class="table-wrap">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Name</th>
+                  <th>Weight</th>
+                </tr>
+              </thead>
+              <tbody id="etf-holdings"></tbody>
+            </table>
+          </div>
+
+          <h3 class="section-label">Sector allocation</h3>
+          <div id="etf-sectors" class="stats-grid"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+  <script src="/static/research.js"></script>
+</body>
+</html>
