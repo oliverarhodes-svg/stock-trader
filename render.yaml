@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: stock-tracker
+    runtime: ruby
+    plan: free
+    buildCommand: bundle install
+    startCommand: bundle exec ruby server.rb
